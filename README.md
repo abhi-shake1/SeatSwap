@@ -1,4 +1,4 @@
-# SeatSwap - Railway Seat Exchange Platform
+# TrackEarn - Railway Seat Exchange Platform
 
 A Django-based web application that allows railway passengers to exchange seats with other passengers traveling on the same route for a more comfortable journey.
 
