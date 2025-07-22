@@ -1,0 +1,140 @@
+{% extends 'seats/base.html' %}
+
+{% block title %}Payment - TrackEarn{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-credit-card"></i> Complete Payment</h3>
+                </div>
+                <div class="card-body">
+                    <!-- Exchange Summary -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h5 class="card-title">Exchange Summary</h5>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <p><strong>Train:</strong> {{ exchange.seat_listing.train_name }}</p>
+                                            <p><strong>Route:</strong> {{ exchange.seat_listing.source_station }} → {{ exchange.seat_listing.destination_station }}</p>
+                                            <p><strong>Journey Date:</strong> {{ exchange.seat_listing.journey_date|date:"M d, Y" }}</p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <p><strong>Seat:</strong> {{ exchange.seat_listing.get_seat_type_display }} - {{ exchange.seat_listing.seat_number }}</p>
+                                            <p><strong>Coach:</strong> {{ exchange.seat_listing.coach_number }}</p>
+                                            <p><strong>Seller:</strong> {{ exchange.seller.username }}</p>
+                                        </div>
+                                    </div>
+                                    <hr>
+                                    <h4 class="text-success">Total Amount: ₹{{ exchange.exchange_amount }}</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Payment Instructions -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <h5><i class="fas fa-info-circle"></i> Payment Instructions</h5>
+                                <ol>
+                                    <li>Send ₹{{ exchange.exchange_amount }} to the seller's UPI ID</li>
+                                    <li>Copy the transaction ID from your payment app</li>
+                                    <li>Enter the transaction ID below to complete the exchange</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Seller UPI Details -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card border-primary">
+                                <div class="card-header bg-primary text-white">
+                                    <h5><i class="fas fa-mobile-alt"></i> Seller's UPI Details</h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if exchange.seller.userprofile.upi_id %}
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <p class="mb-1"><strong>UPI ID:</strong></p>
+                                                <h4 class="text-primary">{{ exchange.seller.userprofile.upi_id }}</h4>
+                                            </div>
+                                            <div>
+                                                <button class="btn btn-outline-primary" onclick="copyUPI()">
+                                                    <i class="fas fa-copy"></i> Copy UPI ID
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <p class="text-muted mt-2">
+                                            <strong>Name:</strong> {{ exchange.seller.first_name }} {{ exchange.seller.last_name }}
+                                            {% if not exchange.seller.first_name %}{{ exchange.seller.username }}{% endif %}
+                                        </p>
+                                    {% else %}
+                                        <div class="alert alert-warning">
+                                            <i class="fas fa-exclamation-triangle"></i> 
+                                            The seller hasn't provided their UPI ID yet. Please contact them directly.
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Payment Confirmation Form -->
+                    <div class="row">
+                        <div class="col-12">
+                            <form method="post">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <label for="transaction_id" class="form-label">Transaction ID</label>
+                                    <input type="text" class="form-control" id="transaction_id" name="transaction_id" 
+                                           placeholder="Enter the transaction ID from your payment app" required>
+                                    <div class="form-text">
+                                        This ID is usually 12 digits and can be found in your payment app's transaction history.
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="confirmPayment" required>
+                                        <label class="form-check-label" for="confirmPayment">
+                                            I confirm that I have sent ₹{{ exchange.exchange_amount }} to the seller's UPI ID
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                    <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+                                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                                    </a>
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-check"></i> Confirm Payment
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyUPI() {
+    const upiId = "{{ exchange.seller.userprofile.upi_id }}";
+    navigator.clipboard.writeText(upiId).then(function() {
+        alert('UPI ID copied to clipboard!');
+    }, function(err) {
+        console.error('Could not copy text: ', err);
+    });
+}
+</script>
+{% endblock %}

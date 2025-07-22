@@ -1,0 +1,183 @@
+{% extends 'seats/base.html' %}
+
+{% block title %}List Seat - TrackEarn{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-plus"></i> List Your Seat for Exchange</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="seatListingForm">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.pnr_number.id_for_label }}" class="form-label">PNR Number</label>
+                            {{ form.pnr_number }}
+                            <div class="btn-group mt-2" role="group">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="verifyPNR">
+                                    <i class="fas fa-search"></i> Verify PNR
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-info" id="testDataBtn">
+                                    <i class="fas fa-flask"></i> Use Test Data
+                                </button>
+                            </div>
+                            <div class="form-text">{{ form.pnr_number.help_text }}</div>
+                            {% if form.pnr_number.errors %}
+                                <div class="text-danger small">{{ form.pnr_number.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div id="pnrDetails" class="mb-3" style="display: none;">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">Journey Details</h6>
+                                    <div id="journeyInfo"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.seat_type.id_for_label }}" class="form-label">Seat Type</label>
+                                    {{ form.seat_type }}
+                                    {% if form.seat_type.errors %}
+                                        <div class="text-danger small">{{ form.seat_type.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.seat_number.id_for_label }}" class="form-label">Seat Number</label>
+                                    {{ form.seat_number }}
+                                    {% if form.seat_number.errors %}
+                                        <div class="text-danger small">{{ form.seat_number.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.coach_number.id_for_label }}" class="form-label">Coach Number</label>
+                                    {{ form.coach_number }}
+                                    {% if form.coach_number.errors %}
+                                        <div class="text-danger small">{{ form.coach_number.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.price.id_for_label }}" class="form-label">Exchange Price (₹)</label>
+                                    {{ form.price }}
+                                    <div class="form-text">{{ form.price.help_text }}</div>
+                                    {% if form.price.errors %}
+                                        <div class="text-danger small">{{ form.price.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
+                            {{ form.description }}
+                            <div class="form-text">{{ form.description.help_text }}</div>
+                            {% if form.description.errors %}
+                                <div class="text-danger small">{{ form.description.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Dashboard
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> List Seat
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    $('#verifyPNR').click(function() {
+        const pnrNumber = $('#id_pnr_number').val();
+        if (pnrNumber.length !== 10) {
+            alert('Please enter a valid 10-digit PNR number');
+            return;
+        }
+        
+        // Show loading state
+        $('#verifyPNR').html('<i class="fas fa-spinner fa-spin"></i> Verifying...');
+        $('#verifyPNR').prop('disabled', true);
+        
+        $.ajax({
+            url: '{% url "verify_pnr" %}',
+            type: 'POST',
+            data: {
+                'pnr_number': pnrNumber,
+                'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+            },
+            success: function(response) {
+                console.log('PNR Response:', response); // Debug log
+                
+                if (response.success) {
+                    const data = response.data;
+                    console.log('PNR Data:', data); // Debug log
+                    
+                    $('#journeyInfo').html(`
+                        <p><strong>Train:</strong> ${data.train_name || 'N/A'} (${data.train_number || 'N/A'})</p>
+                        <p><strong>Route:</strong> ${data.source_station || 'N/A'} → ${data.destination_station || 'N/A'}</p>
+                        <p><strong>Journey Date:</strong> ${data.journey_date || 'N/A'}</p>
+                        <p><strong>Class:</strong> ${data.travel_class || 'N/A'}</p>
+                        <p><strong>Passengers:</strong> ${data.passenger_count || 'N/A'}</p>
+                    `);
+                    $('#pnrDetails').show();
+                } else {
+                    alert('Error: ' + response.message);
+                }
+                
+                // Reset button
+                $('#verifyPNR').html('<i class="fas fa-search"></i> Verify PNR');
+                $('#verifyPNR').prop('disabled', false);
+            },
+            error: function(xhr, status, error) {
+                console.log('AJAX Error:', xhr.responseText); // Debug log
+                alert('Error verifying PNR. Please try again.');
+                
+                // Reset button
+                $('#verifyPNR').html('<i class="fas fa-search"></i> Verify PNR');
+                $('#verifyPNR').prop('disabled', false);
+            }
+        });
+    });
+
+    // Test data button for development
+    $('#testDataBtn').click(function() {
+        $('#id_pnr_number').val('8634824688');
+        $('#journeyInfo').html(`
+            <p><strong>Train:</strong> REWANCHAL EXP (12185)</p>
+            <p><strong>Route:</strong> Rani Kamlapati(Bhopal) → Rewa</p>
+            <p><strong>Journey Date:</strong> 2025-07-19</p>
+            <p><strong>Class:</strong> 3A</p>
+            <p><strong>Passengers:</strong> 4</p>
+        `);
+        $('#pnrDetails').show();
+        
+        // Show success message
+        alert('Test data loaded! You can now fill in the seat details and submit the form.');
+    });
+});
+</script>
+{% endblock %}

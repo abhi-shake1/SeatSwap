@@ -1,0 +1,230 @@
+{% extends 'seats/base.html' %}
+
+{% block title %}Dashboard - TrackEarn{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+                <span class="text-muted fs-6">Welcome back, {{ user.username }}!</span>
+            </h2>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-plus"></i> List a Seat
+                    </h5>
+                    <p class="card-text">Have a seat to exchange? List it here and connect with passengers.</p>
+                    <a href="{% url 'list_seat' %}" class="btn btn-light">
+                        <i class="fas fa-plus"></i> List Seat
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-search"></i> Find Seats
+                    </h5>
+                    <p class="card-text">Looking for a better seat? Browse available seats on your route.</p>
+                    <a href="{% url 'browse_seats' %}" class="btn btn-light">
+                        <i class="fas fa-search"></i> Browse Seats
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Your Listings -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list"></i> Your Seat Listings
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if user_listings %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>PNR</th>
+                                        <th>Train</th>
+                                        <th>Route</th>
+                                        <th>Seat</th>
+                                        <th>Price</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for listing in user_listings %}
+                                    <tr>
+                                        <td>{{ listing.pnr_number }}</td>
+                                        <td>{{ listing.train_name }}</td>
+                                        <td>{{ listing.source_station }} → {{ listing.destination_station }}</td>
+                                        <td>{{ listing.seat_type }} - {{ listing.seat_number }}</td>
+                                        <td>₹{{ listing.price }}</td>
+                                        <td>
+                                            {% if listing.status == 'AVAILABLE' %}
+                                                <span class="badge bg-success">Available</span>
+                                            {% elif listing.status == 'BOOKED' %}
+                                                <span class="badge bg-warning">Booked</span>
+                                            {% elif listing.status == 'COMPLETED' %}
+                                                <span class="badge bg-info">Completed</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ listing.status }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'seat_detail' listing.id %}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye"></i> View
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">You haven't listed any seats yet.</p>
+                            <a href="{% url 'list_seat' %}" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> List Your First Seat
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Purchases -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-shopping-cart"></i> Your Purchases
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if user_purchases %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Train</th>
+                                        <th>Route</th>
+                                        <th>Seat</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for purchase in user_purchases %}
+                                    <tr>
+                                        <td>{{ purchase.seat_listing.train_name }}</td>
+                                        <td>{{ purchase.seat_listing.source_station }} → {{ purchase.seat_listing.destination_station }}</td>
+                                        <td>{{ purchase.seat_listing.seat_type }} - {{ purchase.seat_listing.seat_number }}</td>
+                                        <td>₹{{ purchase.exchange_amount }}</td>
+                                        <td>
+                                            {% if purchase.payment_status == 'PAID' %}
+                                                <span class="badge bg-success">Paid</span>
+                                            {% elif purchase.payment_status == 'PENDING' %}
+                                                <span class="badge bg-warning">Pending</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ purchase.payment_status }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ purchase.exchange_date|date:"M d, Y" }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">You haven't purchased any seats yet.</p>
+                            <a href="{% url 'browse_seats' %}" class="btn btn-success">
+                                <i class="fas fa-search"></i> Browse Available Seats
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Sales -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-money-bill-wave"></i> Your Sales
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if user_sales %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Train</th>
+                                        <th>Route</th>
+                                        <th>Seat</th>
+                                        <th>Amount</th>
+                                        <th>Buyer</th>
+                                        <th>Status</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for sale in user_sales %}
+                                    <tr>
+                                        <td>{{ sale.seat_listing.train_name }}</td>
+                                        <td>{{ sale.seat_listing.source_station }} → {{ sale.seat_listing.destination_station }}</td>
+                                        <td>{{ sale.seat_listing.seat_type }} - {{ sale.seat_listing.seat_number }}</td>
+                                        <td>₹{{ sale.exchange_amount }}</td>
+                                        <td>{{ sale.buyer.username }}</td>
+                                        <td>
+                                            {% if sale.payment_status == 'PAID' %}
+                                                <span class="badge bg-success">Paid</span>
+                                            {% elif sale.payment_status == 'PENDING' %}
+                                                <span class="badge bg-warning">Pending</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ sale.payment_status }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ sale.exchange_date|date:"M d, Y" }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-money-bill-wave fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">You haven't sold any seats yet.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

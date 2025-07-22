@@ -1,0 +1,134 @@
+{% extends 'seats/base.html' %}
+
+{% block title %}{{ seat.train_name }} - Seat Details{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3>{{ seat.train_name }} - Seat Details</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5><i class="fas fa-train"></i> Train Information</h5>
+                            <p><strong>Train Number:</strong> {{ seat.train_number }}</p>
+                            <p><strong>Train Name:</strong> {{ seat.train_name }}</p>
+                            <p><strong>PNR:</strong> {{ seat.pnr_number }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h5><i class="fas fa-route"></i> Journey Details</h5>
+                            <p><strong>From:</strong> {{ seat.source_station }} ({{ seat.source_station_code }})</p>
+                            <p><strong>To:</strong> {{ seat.destination_station }} ({{ seat.destination_station_code }})</p>
+                            <p><strong>Journey Date:</strong> {{ seat.journey_date|date:"M d, Y" }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5><i class="fas fa-chair"></i> Seat Information</h5>
+                            <p><strong>Seat Type:</strong> {{ seat.get_seat_type_display }}</p>
+                            <p><strong>Seat Number:</strong> {{ seat.seat_number }}</p>
+                            <p><strong>Coach Number:</strong> {{ seat.coach_number }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h5><i class="fas fa-money-bill-wave"></i> Exchange Details</h5>
+                            <p><strong>Price:</strong> <span class="text-success fs-4">₹{{ seat.price }}</span></p>
+                            <p><strong>Status:</strong> 
+                                <span class="badge bg-success">{{ seat.get_status_display }}</span>
+                            </p>
+                            <p><strong>Listed by:</strong> {{ seat.owner.username }}</p>
+                        </div>
+                    </div>
+                    
+                    {% if seat.description %}
+                    <div class="mb-4">
+                        <h5><i class="fas fa-info-circle"></i> Description</h5>
+                        <p class="card-text">{{ seat.description }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-4">
+                        <h5><i class="fas fa-clock"></i> Listing Information</h5>
+                        <p><strong>Listed on:</strong> {{ seat.created_at|date:"M d, Y H:i" }}</p>
+                        <p><strong>Last updated:</strong> {{ seat.updated_at|date:"M d, Y H:i" }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-handshake"></i> Book This Seat</h5>
+                </div>
+                <div class="card-body">
+                    {% if seat.owner == user %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> This is your own listing.
+                        </div>
+                    {% else %}
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="buyer_pnr" class="form-label">Your PNR Number</label>
+                                <input type="text" class="form-control" id="buyer_pnr" name="buyer_pnr" 
+                                       maxlength="10" placeholder="Enter your 10-digit PNR" required>
+                                <div class="form-text">
+                                    Your PNR must be for the same route ({{ seat.source_station }} → {{ seat.destination_station }})
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h6 class="card-title">Exchange Summary</h6>
+                                        <p class="mb-1"><strong>Amount to pay:</strong> ₹{{ seat.price }}</p>
+                                        <p class="mb-1"><strong>Seat:</strong> {{ seat.get_seat_type_display }} - {{ seat.seat_number }}</p>
+                                        <p class="mb-0"><strong>Coach:</strong> {{ seat.coach_number }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-success btn-lg">
+                                    <i class="fas fa-credit-card"></i> Book & Pay ₹{{ seat.price }}
+                                </button>
+                            </div>
+                        </form>
+                        
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                <i class="fas fa-shield-alt"></i> 
+                                Your PNR will be verified to ensure you're traveling on the same route.
+                            </small>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Seller Information -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6><i class="fas fa-user"></i> Seller Information</h6>
+                </div>
+                <div class="card-body">
+                    <p><strong>Username:</strong> {{ seat.owner.username }}</p>
+                    <p><strong>Member since:</strong> {{ seat.owner.date_joined|date:"M Y" }}</p>
+                    <!-- Add rating system here in future -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-12">
+            <a href="{% url 'browse_seats' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Browse
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

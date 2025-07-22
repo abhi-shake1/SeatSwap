@@ -1,0 +1,170 @@
+{% extends 'seats/base.html' %}
+
+{% block title %}TrackEarn - Railway Seat Exchange Platform{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold mb-4">
+                    Exchange Railway Seats <br>
+                    <span class="text-warning">With Ease</span>
+                </h1>
+                <p class="lead mb-4">
+                    Connect with fellow passengers to exchange seats for a more comfortable journey. 
+                    Secure, simple, and convenient seat swapping platform for Indian Railways.
+                </p>
+                <div class="d-flex gap-3">
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'browse_seats' %}" class="btn btn-light btn-lg">
+                        <i class="fas fa-search"></i> Browse Seats
+                    </a>
+                    <a href="{% url 'list_seat' %}" class="btn btn-outline-light btn-lg">
+                        <i class="fas fa-plus"></i> List Your Seat
+                    </a>
+                    {% else %}
+                    <a href="{% url 'register' %}" class="btn btn-light btn-lg">
+                        <i class="fas fa-user-plus"></i> Get Started
+                    </a>
+                    <a href="{% url 'login' %}" class="btn btn-outline-light btn-lg">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="text-center">
+                    <i class="fas fa-train" style="font-size: 200px; opacity: 0.8;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="row text-center mb-5">
+            <div class="col-lg-8 mx-auto">
+                <h2 class="display-5 fw-bold mb-3">How SeatSwap Works</h2>
+                <p class="lead text-muted">
+                    Simple 3-step process to exchange your railway seat with other passengers
+                </p>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card feature-card h-100 border-0 shadow">
+                    <div class="card-body text-center p-4">
+                        <div class="bg-primary text-white rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                            <i class="fas fa-ticket-alt fa-lg"></i>
+                        </div>
+                        <h5 class="card-title">1. List Your Seat</h5>
+                        <p class="card-text text-muted">
+                            Enter your PNR number and seat details. Our system will automatically fetch your journey information.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card feature-card h-100 border-0 shadow">
+                    <div class="card-body text-center p-4">
+                        <div class="bg-success text-white rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                            <i class="fas fa-handshake fa-lg"></i>
+                        </div>
+                        <h5 class="card-title">2. Find & Connect</h5>
+                        <p class="card-text text-muted">
+                            Browse available seats on your route and connect with passengers willing to exchange.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card feature-card h-100 border-0 shadow">
+                    <div class="card-body text-center p-4">
+                        <div class="bg-info text-white rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                            <i class="fas fa-credit-card fa-lg"></i>
+                        </div>
+                        <h5 class="card-title">3. Secure Payment</h5>
+                        <p class="card-text text-muted">
+                            Complete the transaction securely using UPI. Exchange seats and enjoy your comfortable journey.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Benefits Section -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row text-center mb-5">
+            <div class="col-lg-8 mx-auto">
+                <h2 class="display-5 fw-bold mb-3">Why Choose SeatSwap?</h2>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-3">
+                <div class="text-center">
+                    <i class="fas fa-shield-alt text-primary mb-3" style="font-size: 2rem;"></i>
+                    <h5>Secure & Safe</h5>
+                    <p class="text-muted">All transactions are secure with verified PNR matching</p>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-3">
+                <div class="text-center">
+                    <i class="fas fa-route text-success mb-3" style="font-size: 2rem;"></i>
+                    <h5>Same Route Only</h5>
+                    <p class="text-muted">Exchange only with passengers on the same route</p>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-3">
+                <div class="text-center">
+                    <i class="fas fa-mobile-alt text-info mb-3" style="font-size: 2rem;"></i>
+                    <h5>Easy to Use</h5>
+                    <p class="text-muted">Simple interface designed for all passengers</p>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-3">
+                <div class="text-center">
+                    <i class="fas fa-clock text-warning mb-3" style="font-size: 2rem;"></i>
+                    <h5>Quick Process</h5>
+                    <p class="text-muted">Find and exchange seats in minutes</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+{% if not user.is_authenticated %}
+<section class="py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 mx-auto text-center">
+                <h2 class="display-5 fw-bold mb-3">Ready to Get Started?</h2>
+                <p class="lead text-muted mb-4">
+                    Join thousands of passengers who have made their railway journeys more comfortable
+                </p>
+                <a href="{% url 'register' %}" class="btn btn-primary btn-lg me-3">
+                    <i class="fas fa-user-plus"></i> Create Account
+                </a>
+                <a href="{% url 'login' %}" class="btn btn-outline-primary btn-lg">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
+{% endblock %}
