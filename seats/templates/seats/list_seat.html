@@ -136,12 +136,32 @@ $(document).ready(function() {
                     const data = response.data;
                     console.log('PNR Data:', data); // Debug log
                     
+                    let passengerHTML = '';
+                    if (data.passengers && data.passengers.length > 0) {
+                        passengerHTML = '<div class="mt-3"><h6>Passenger Details:</h6>';
+                        passengerHTML += '<div class="table-responsive"><table class="table table-sm table-striped">';
+                        passengerHTML += '<thead><tr><th>#</th><th>Status</th><th>Coach</th><th>Berth</th><th>Type</th></tr></thead><tbody>';
+                        
+                        data.passengers.forEach(function(passenger) {
+                            passengerHTML += `<tr>
+                                <td>${passenger.passenger_serial_number}</td>
+                                <td>${passenger.current_status}</td>
+                                <td>${passenger.current_coach_id}</td>
+                                <td>${passenger.current_berth_no}</td>
+                                <td>${passenger.current_berth_code}</td>
+                            </tr>`;
+                        });
+                        
+                        passengerHTML += '</tbody></table></div></div>';
+                    }
+                    
                     $('#journeyInfo').html(`
                         <p><strong>Train:</strong> ${data.train_name || 'N/A'} (${data.train_number || 'N/A'})</p>
                         <p><strong>Route:</strong> ${data.source_station || 'N/A'} → ${data.destination_station || 'N/A'}</p>
                         <p><strong>Journey Date:</strong> ${data.journey_date || 'N/A'}</p>
                         <p><strong>Class:</strong> ${data.travel_class || 'N/A'}</p>
                         <p><strong>Passengers:</strong> ${data.passenger_count || 'N/A'}</p>
+                        ${passengerHTML}
                     `);
                     $('#pnrDetails').show();
                 } else {
@@ -172,6 +192,22 @@ $(document).ready(function() {
             <p><strong>Journey Date:</strong> 2025-07-19</p>
             <p><strong>Class:</strong> 3A</p>
             <p><strong>Passengers:</strong> 4</p>
+            <div class="mt-3">
+                <h6>Passenger Details:</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped">
+                        <thead>
+                            <tr><th>#</th><th>Status</th><th>Coach</th><th>Berth</th><th>Type</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>1</td><td>CNF</td><td>B6</td><td>33</td><td>LB</td></tr>
+                            <tr><td>2</td><td>CNF</td><td>B6</td><td>36</td><td>LB</td></tr>
+                            <tr><td>3</td><td>CNF</td><td>B6</td><td>34</td><td>MB</td></tr>
+                            <tr><td>4</td><td>CNF</td><td>B6</td><td>37</td><td>MB</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         `);
         $('#pnrDetails').show();
         

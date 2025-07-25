@@ -12,6 +12,24 @@
         </div>
     </div>
     
+    <!-- Route Filter Information -->
+    {% if user_source and user_destination %}
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <i class="fas fa-filter"></i> 
+                <strong>Filtered for your journey:</strong> {{ user_source }} → {{ user_destination }}
+                {% if user_journey_date %}
+                on {{ user_journey_date|date:"d M Y" }}
+                {% endif %}
+                {% if user_travel_class %}
+                ({{ user_travel_class }} class)
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
     <!-- Search Filter -->
     <div class="row mb-4">
         <div class="col-12">
@@ -21,17 +39,17 @@
                         <div class="col-md-3">
                             <label class="form-label">Source Station</label>
                             <input type="text" name="source_station" class="form-control" 
-                                   value="{{ source_station }}" placeholder="Enter source station">
+                                   value="{{ search_source|default:user_source }}" placeholder="Enter source station">
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Destination Station</label>
                             <input type="text" name="destination_station" class="form-control" 
-                                   value="{{ destination_station }}" placeholder="Enter destination station">
+                                   value="{{ search_destination|default:user_destination }}" placeholder="Enter destination station">
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Journey Date</label>
                             <input type="date" name="journey_date" class="form-control" 
-                                   value="{{ journey_date }}">
+                                   value="{{ search_date|default:user_journey_date|date:'Y-m-d' }}">
                         </div>
                         <div class="col-md-3 d-flex align-items-end">
                             <button type="submit" class="btn btn-primary w-100">

@@ -8,6 +8,14 @@ class UserProfile(models.Model):
     phone_number = models.CharField(max_length=15)
     upi_id = models.CharField(max_length=100, blank=True, null=True)
     is_verified = models.BooleanField(default=False)
+    current_pnr = models.CharField(max_length=10, blank=True, null=True)  # User's current journey PNR
+    source_station = models.CharField(max_length=100, blank=True, null=True)  # User's journey source
+    destination_station = models.CharField(max_length=100, blank=True, null=True)  # User's journey destination
+    source_station_code = models.CharField(max_length=10, blank=True, null=True)
+    destination_station_code = models.CharField(max_length=10, blank=True, null=True)
+    journey_date = models.DateField(blank=True, null=True)
+    travel_class = models.CharField(max_length=10, blank=True, null=True)
+    pnr_updated_at = models.DateTimeField(blank=True, null=True)  # When PNR was last updated
     created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
@@ -90,10 +98,30 @@ class PNRStatus(models.Model):
     destination_station_code = models.CharField(max_length=10)
     journey_date = models.DateField()
     passenger_count = models.IntegerField()
+    travel_class = models.CharField(max_length=10, blank=True, null=True)  # Added travel class field
     last_updated = models.DateTimeField(auto_now=True)
     
     def __str__(self):
         return f"PNR: {self.pnr_number} - {self.train_name}"
+
+
+class PassengerDetails(models.Model):
+    pnr_status = models.ForeignKey(PNRStatus, on_delete=models.CASCADE, related_name='passengers')
+    passenger_serial_number = models.IntegerField()
+    booking_status = models.CharField(max_length=20)
+    booking_coach_id = models.CharField(max_length=10)
+    booking_berth_no = models.IntegerField()
+    booking_berth_code = models.CharField(max_length=10)  # LB, MB, UB, SL, SU etc.
+    current_status = models.CharField(max_length=20)
+    current_coach_id = models.CharField(max_length=10)
+    current_berth_no = models.IntegerField()
+    current_berth_code = models.CharField(max_length=10)
+    
+    def __str__(self):
+        return f"Passenger {self.passenger_serial_number} - {self.current_status}/{self.current_coach_id}/{self.current_berth_no}/{self.current_berth_code}"
+    
+    class Meta:
+        ordering = ['passenger_serial_number']
 
 
 class StationCode(models.Model):

@@ -104,3 +104,22 @@ class SeatSearchForm(forms.Form):
             'type': 'date'
         })
     )
+
+
+class PNRLoginForm(forms.Form):
+    """Form for PNR-based login after authentication"""
+    pnr_number = forms.CharField(
+        max_length=10,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter your current journey PNR',
+            'pattern': '[0-9]{10}',
+            'title': 'Please enter a 10-digit PNR number'
+        })
+    )
+    
+    def clean_pnr_number(self):
+        pnr = self.cleaned_data['pnr_number']
+        if not pnr.isdigit() or len(pnr) != 10:
+            raise forms.ValidationError("PNR number must be exactly 10 digits")
+        return pnr

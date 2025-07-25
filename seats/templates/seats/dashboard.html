@@ -13,6 +13,41 @@
         </div>
     </div>
     
+    <!-- Current Journey Information -->
+    {% if user_profile and user_profile.current_pnr %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-route"></i> Your Current Journey
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>PNR:</strong> {{ user_profile.current_pnr }}</p>
+                            <p class="mb-1"><strong>Route:</strong> {{ user_profile.source_station }} → {{ user_profile.destination_station }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>Date:</strong> {{ user_profile.journey_date|date:"d M Y" }}</p>
+                            <p class="mb-1"><strong>Class:</strong> {{ user_profile.travel_class|default:"N/A" }}</p>
+                        </div>
+                    </div>
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle"></i> 
+                        Showing seat exchanges for your journey route. 
+                        Last updated: {{ user_profile.pnr_updated_at|date:"d M Y H:i" }}
+                        <a href="{% url 'update_journey' %}" class="ms-2 btn btn-sm btn-outline-info">
+                            <i class="fas fa-edit"></i> Update Journey
+                        </a>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
     <!-- Quick Actions -->
     <div class="row mb-4">
         <div class="col-md-6">

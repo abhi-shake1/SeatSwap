@@ -12,5 +12,6 @@ urlpatterns = [
     path('seat/<int:seat_id>/', views.seat_detail, name='seat_detail'),
     path('payment/<int:exchange_id>/', views.payment, name='payment'),
     path('verify-pnr/', views.verify_pnr, name='verify_pnr'),
+    path('update-journey/', views.update_journey, name='update_journey'),
     path('admin/exchanges/', views.admin_exchanges, name='admin_exchanges'),
 ]

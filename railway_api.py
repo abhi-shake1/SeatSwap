@@ -187,6 +187,24 @@ class RapidAPIRailwayClient:
             passengers = data.get('passengerList', [])
             passenger_count = data.get('numberOfpassenger', len(passengers))
             
+            # Process passenger details
+            passenger_details = []
+            for passenger in passengers:
+                passenger_info = {
+                    'passenger_serial_number': passenger.get('passengerSerialNumber', 0),
+                    'booking_status': passenger.get('bookingStatus', ''),
+                    'booking_coach_id': passenger.get('bookingCoachId', ''),
+                    'booking_berth_no': passenger.get('bookingBerthNo', 0),
+                    'booking_berth_code': passenger.get('bookingBerthCode', ''),
+                    'booking_status_details': passenger.get('bookingStatusDetails', ''),
+                    'current_status': passenger.get('currentStatus', ''),
+                    'current_coach_id': passenger.get('currentCoachId', ''),
+                    'current_berth_no': passenger.get('currentBerthNo', 0),
+                    'current_berth_code': passenger.get('currentBerthCode', ''),
+                    'current_status_details': passenger.get('currentStatusDetails', ''),
+                }
+                passenger_details.append(passenger_info)
+            
             # Extract fare information
             booking_fare = data.get('bookingFare', 0)
             
@@ -207,6 +225,7 @@ class RapidAPIRailwayClient:
                 'arrival_date': data.get('arrivalDate', ''),
                 'distance': data.get('distance', 0),
                 'mobile_number': data.get('mobileNumber', ''),
+                'passengers': passenger_details,  # Add passenger details
             }
             
             return processed_data
@@ -243,6 +262,60 @@ class MockRailwayAPIClient:
                 'booking_fare': '3740',
                 'quota': 'GN',
                 'booking_date': '28-06-2025',
+                'passengers': [
+                    {
+                        'passenger_serial_number': 1,
+                        'booking_status': 'CNF',
+                        'booking_coach_id': 'B6',
+                        'booking_berth_no': 33,
+                        'booking_berth_code': 'LB',
+                        'booking_status_details': 'CNF/B6/33/LB',
+                        'current_status': 'CNF',
+                        'current_coach_id': 'B6',
+                        'current_berth_no': 33,
+                        'current_berth_code': 'LB',
+                        'current_status_details': 'CNF/B6/33/LB',
+                    },
+                    {
+                        'passenger_serial_number': 2,
+                        'booking_status': 'CNF',
+                        'booking_coach_id': 'B6',
+                        'booking_berth_no': 36,
+                        'booking_berth_code': 'LB',
+                        'booking_status_details': 'CNF/B6/36/LB',
+                        'current_status': 'CNF',
+                        'current_coach_id': 'B6',
+                        'current_berth_no': 36,
+                        'current_berth_code': 'LB',
+                        'current_status_details': 'CNF/B6/36/LB',
+                    },
+                    {
+                        'passenger_serial_number': 3,
+                        'booking_status': 'CNF',
+                        'booking_coach_id': 'B6',
+                        'booking_berth_no': 34,
+                        'booking_berth_code': 'MB',
+                        'booking_status_details': 'CNF/B6/34/MB',
+                        'current_status': 'CNF',
+                        'current_coach_id': 'B6',
+                        'current_berth_no': 34,
+                        'current_berth_code': 'MB',
+                        'current_status_details': 'CNF/B6/34/MB',
+                    },
+                    {
+                        'passenger_serial_number': 4,
+                        'booking_status': 'CNF',
+                        'booking_coach_id': 'B6',
+                        'booking_berth_no': 37,
+                        'booking_berth_code': 'MB',
+                        'booking_status_details': 'CNF/B6/37/MB',
+                        'current_status': 'CNF',
+                        'current_coach_id': 'B6',
+                        'current_berth_no': 37,
+                        'current_berth_code': 'MB',
+                        'current_status_details': 'CNF/B6/37/MB',
+                    },
+                ],
             },
             '4335734389': {
                 'train_number': '17221',
@@ -261,6 +334,21 @@ class MockRailwayAPIClient:
                 'booking_fare': '385',
                 'quota': 'GN',
                 'booking_date': '25-06-2025',
+                'passengers': [
+                    {
+                        'passenger_serial_number': 1,
+                        'booking_status': 'CNF',
+                        'booking_coach_id': 'S4',
+                        'booking_berth_no': 15,
+                        'booking_berth_code': 'SL',
+                        'booking_status_details': 'CNF/S4/15/SL',
+                        'current_status': 'CNF',
+                        'current_coach_id': 'S4',
+                        'current_berth_no': 15,
+                        'current_berth_code': 'SL',
+                        'current_status_details': 'CNF/S4/15/SL',
+                    },
+                ],
             },
             '1234567890': {
                 'train_number': '18447',
@@ -279,6 +367,34 @@ class MockRailwayAPIClient:
                 'booking_fare': '855',
                 'quota': 'GN',
                 'booking_date': '27-08-2022',
+                'passengers': [
+                    {
+                        'passenger_serial_number': 1,
+                        'booking_status': 'CNF',
+                        'booking_coach_id': 'A1',
+                        'booking_berth_no': 10,
+                        'booking_berth_code': 'LB',
+                        'booking_status_details': 'CNF/A1/10/LB',
+                        'current_status': 'CNF',
+                        'current_coach_id': 'A1',
+                        'current_berth_no': 10,
+                        'current_berth_code': 'LB',
+                        'current_status_details': 'CNF/A1/10/LB',
+                    },
+                    {
+                        'passenger_serial_number': 2,
+                        'booking_status': 'CNF',
+                        'booking_coach_id': 'A1',
+                        'booking_berth_no': 11,
+                        'booking_berth_code': 'MB',
+                        'booking_status_details': 'CNF/A1/11/MB',
+                        'current_status': 'CNF',
+                        'current_coach_id': 'A1',
+                        'current_berth_no': 11,
+                        'current_berth_code': 'MB',
+                        'current_status_details': 'CNF/A1/11/MB',
+                    },
+                ],
             }
         }
         
@@ -304,6 +420,21 @@ class MockRailwayAPIClient:
                 'booking_fare': '500',
                 'quota': 'GN',
                 'booking_date': '01-01-2025',
+                'passengers': [
+                    {
+                        'passenger_serial_number': 1,
+                        'booking_status': 'CNF',
+                        'booking_coach_id': 'S1',
+                        'booking_berth_no': 5,
+                        'booking_berth_code': 'LB',
+                        'booking_status_details': 'CNF/S1/5/LB',
+                        'current_status': 'CNF',
+                        'current_coach_id': 'S1',
+                        'current_berth_no': 5,
+                        'current_berth_code': 'LB',
+                        'current_status_details': 'CNF/S1/5/LB',
+                    },
+                ],
             }
     
     def get_station_name(self, station_code):
@@ -361,7 +492,7 @@ def get_railway_api_client():
     Returns:
         IRailwayClient: API client instance
     """
-    # For now, use mock client for testing
-    # In production, uncomment the line below to use real API
-    return MockRailwayAPIClient()
-    # return RapidAPIRailwayClient()
+    # Use real API by default
+    # Comment out the line below and uncomment the mock line if you want to use mock data for testing
+    return RapidAPIRailwayClient()
+    # return MockRailwayAPIClient()

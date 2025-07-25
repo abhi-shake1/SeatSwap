@@ -9,8 +9,8 @@ from django.utils import timezone
 from django.db.models import Q
 import json
 import requests
-from .models import SeatListing, SeatExchange, UserProfile, PNRStatus, StationCode
-from .forms import UserRegistrationForm, SeatListingForm, PNRForm
+from .models import SeatListing, SeatExchange, UserProfile, PNRStatus, StationCode, PassengerDetails
+from .forms import UserRegistrationForm, SeatListingForm, PNRForm, PNRLoginForm
 from railway_api import get_railway_api_client
 
 
@@ -39,16 +39,55 @@ def register(request):
 
 
 def login_view(request):
-    """User login view"""
+    """User login view with PNR verification"""
     if request.method == 'POST':
-        username = request.POST['username']
-        password = request.POST['password']
-        user = authenticate(request, username=username, password=password)
-        if user is not None:
-            login(request, user)
-            return redirect('dashboard')
-        else:
-            messages.error(request, 'Invalid username or password.')
+        if 'username' in request.POST:
+            # Initial login step
+            username = request.POST['username']
+            password = request.POST['password']
+            user = authenticate(request, username=username, password=password)
+            if user is not None:
+                # User is authenticated, now ask for PNR
+                request.session['pending_user_id'] = user.id
+                return render(request, 'seats/pnr_login.html', {'form': PNRLoginForm()})
+            else:
+                messages.error(request, 'Invalid username or password.')
+        elif 'pnr_number' in request.POST:
+            # PNR verification step
+            form = PNRLoginForm(request.POST)
+            if form.is_valid():
+                pnr_number = form.cleaned_data['pnr_number']
+                user_id = request.session.get('pending_user_id')
+                
+                if user_id:
+                    user = User.objects.get(id=user_id)
+                    
+                    # Fetch PNR data
+                    pnr_data = fetch_pnr_status(pnr_number)
+                    if pnr_data:
+                        # Update user profile with journey details
+                        user_profile, created = UserProfile.objects.get_or_create(user=user)
+                        user_profile.current_pnr = pnr_number
+                        user_profile.source_station = pnr_data.get('source_station', '')
+                        user_profile.destination_station = pnr_data.get('destination_station', '')
+                        user_profile.source_station_code = pnr_data.get('source_station_code', '')
+                        user_profile.destination_station_code = pnr_data.get('destination_station_code', '')
+                        user_profile.journey_date = pnr_data.get('journey_date')
+                        user_profile.travel_class = pnr_data.get('travel_class', '')
+                        user_profile.pnr_updated_at = timezone.now()
+                        user_profile.save()
+                        
+                        # Complete login
+                        login(request, user)
+                        del request.session['pending_user_id']
+                        messages.success(request, f'Welcome! Journey: {pnr_data.get("source_station")} → {pnr_data.get("destination_station")}')
+                        return redirect('dashboard')
+                    else:
+                        messages.error(request, 'Invalid PNR number or PNR data not found.')
+                        return render(request, 'seats/pnr_login.html', {'form': form})
+            else:
+                return render(request, 'seats/pnr_login.html', {'form': form})
+    
     return render(request, 'seats/login.html')
 
 
@@ -66,12 +105,52 @@ def dashboard(request):
     user_purchases = SeatExchange.objects.filter(buyer=request.user).order_by('-exchange_date')
     user_sales = SeatExchange.objects.filter(seller=request.user).order_by('-exchange_date')
     
+    # Get user's current journey details
+    try:
+        user_profile = UserProfile.objects.get(user=request.user)
+    except UserProfile.DoesNotExist:
+        user_profile = None
+    
     context = {
         'user_listings': user_listings,
         'user_purchases': user_purchases,
         'user_sales': user_sales,
+        'user_profile': user_profile,
     }
     return render(request, 'seats/dashboard.html', context)
+
+
+@login_required
+def update_journey(request):
+    """Allow users to update their journey details"""
+    if request.method == 'POST':
+        form = PNRLoginForm(request.POST)
+        if form.is_valid():
+            pnr_number = form.cleaned_data['pnr_number']
+            
+            # Fetch PNR data
+            pnr_data = fetch_pnr_status(pnr_number)
+            if pnr_data:
+                # Update user profile with journey details
+                user_profile, created = UserProfile.objects.get_or_create(user=request.user)
+                user_profile.current_pnr = pnr_number
+                user_profile.source_station = pnr_data.get('source_station', '')
+                user_profile.destination_station = pnr_data.get('destination_station', '')
+                user_profile.source_station_code = pnr_data.get('source_station_code', '')
+                user_profile.destination_station_code = pnr_data.get('destination_station_code', '')
+                user_profile.journey_date = pnr_data.get('journey_date')
+                user_profile.travel_class = pnr_data.get('travel_class', '')
+                user_profile.pnr_updated_at = timezone.now()
+                user_profile.save()
+                
+                messages.success(request, f'Journey details updated! Route: {pnr_data.get("source_station")} → {pnr_data.get("destination_station")}')
+                return redirect('dashboard')
+            else:
+                messages.error(request, 'Invalid PNR number or PNR data not found.')
+    else:
+        form = PNRLoginForm()
+    
+    return render(request, 'seats/update_journey.html', {'form': form})
 
 
 @login_required
@@ -107,31 +186,69 @@ def list_seat(request):
 
 @login_required
 def browse_seats(request):
-    """Browse available seats"""
-    # Get user's current journey details from session or form
-    source_station = request.GET.get('source_station', '')
-    destination_station = request.GET.get('destination_station', '')
-    journey_date = request.GET.get('journey_date', '')
+    """Browse available seats based on user's journey"""
+    try:
+        user_profile = UserProfile.objects.get(user=request.user)
+        user_source = user_profile.source_station or user_profile.source_station_code
+        user_destination = user_profile.destination_station or user_profile.destination_station_code
+        user_journey_date = user_profile.journey_date
+        user_travel_class = user_profile.travel_class
+    except UserProfile.DoesNotExist:
+        messages.warning(request, 'Please update your journey details to see relevant seats.')
+        return redirect('dashboard')
     
-    # Filter seats based on same route
+    # If user hasn't set journey details, redirect to dashboard
+    if not user_source or not user_destination:
+        messages.warning(request, 'Please login with your current journey PNR to see relevant seat exchanges.')
+        return redirect('dashboard')
+    
+    # Get search parameters from request (for additional filtering)
+    search_source = request.GET.get('source_station', '')
+    search_destination = request.GET.get('destination_station', '')
+    search_date = request.GET.get('journey_date', '')
+    
+    # Base filter: same route as user's journey
     seats = SeatListing.objects.filter(
         status='AVAILABLE'
     ).exclude(owner=request.user)
     
-    if source_station and destination_station:
+    # Filter by user's journey route
+    seats = seats.filter(
+        Q(source_station__icontains=user_source) | Q(source_station_code__icontains=user_source),
+        Q(destination_station__icontains=user_destination) | Q(destination_station_code__icontains=user_destination)
+    )
+    
+    # Additional filtering based on search parameters
+    if search_source:
         seats = seats.filter(
-            Q(source_station__icontains=source_station) | Q(source_station_code__icontains=source_station),
-            Q(destination_station__icontains=destination_station) | Q(destination_station_code__icontains=destination_station)
+            Q(source_station__icontains=search_source) | Q(source_station_code__icontains=search_source)
         )
     
-    if journey_date:
-        seats = seats.filter(journey_date=journey_date)
+    if search_destination:
+        seats = seats.filter(
+            Q(destination_station__icontains=search_destination) | Q(destination_station_code__icontains=search_destination)
+        )
+    
+    if search_date:
+        seats = seats.filter(journey_date=search_date)
+    elif user_journey_date:
+        # If no search date specified, filter by user's journey date
+        seats = seats.filter(journey_date=user_journey_date)
+    
+    # Optional: Filter by same travel class
+    if user_travel_class:
+        # You might want to add travel_class field to SeatListing model for better filtering
+        pass
     
     context = {
         'seats': seats,
-        'source_station': source_station,
-        'destination_station': destination_station,
-        'journey_date': journey_date,
+        'user_source': user_source,
+        'user_destination': user_destination,
+        'user_journey_date': user_journey_date,
+        'user_travel_class': user_travel_class,
+        'search_source': search_source,
+        'search_destination': search_destination,
+        'search_date': search_date,
     }
     return render(request, 'seats/browse_seats.html', context)
 
@@ -227,6 +344,22 @@ def fetch_pnr_status(pnr_number):
             pnr_status = PNRStatus.objects.get(pnr_number=pnr_number)
             # If cached data is less than 24 hours old, use it
             if (timezone.now() - pnr_status.last_updated).total_seconds() < 86400:  # 24 hours
+                # Get passenger details for cached data
+                passengers = []
+                for passenger in pnr_status.passengers.all():
+                    passengers.append({
+                        'passenger_serial_number': passenger.passenger_serial_number,
+                        'booking_status': passenger.booking_status,
+                        'booking_coach_id': passenger.booking_coach_id,
+                        'booking_berth_no': passenger.booking_berth_no,
+                        'booking_berth_code': passenger.booking_berth_code,
+                        'current_status': passenger.current_status,
+                        'current_coach_id': passenger.current_coach_id,
+                        'current_berth_no': passenger.current_berth_no,
+                        'current_berth_code': passenger.current_berth_code,
+                        'current_status_details': f"{passenger.current_status}/{passenger.current_coach_id}/{passenger.current_berth_no}/{passenger.current_berth_code}",
+                    })
+                
                 return {
                     'train_number': pnr_status.train_number,
                     'train_name': pnr_status.train_name,
@@ -236,7 +369,8 @@ def fetch_pnr_status(pnr_number):
                     'destination_station_code': pnr_status.destination_station_code,
                     'journey_date': pnr_status.journey_date,
                     'passenger_count': pnr_status.passenger_count,
-                    'travel_class': 'N/A',  # Default since not stored in model
+                    'travel_class': pnr_status.travel_class or 'N/A',  # Use stored travel class
+                    'passengers': passengers,  # Add passenger details
                 }
         except PNRStatus.DoesNotExist:
             pass
@@ -258,9 +392,26 @@ def fetch_pnr_status(pnr_number):
                     'destination_station_code': pnr_data.get('destination_station_code', ''),
                     'journey_date': pnr_data.get('journey_date', timezone.now().date()),
                     'passenger_count': pnr_data.get('passenger_count', 1),
-                    # Note: travel_class is not stored in PNRStatus model
+                    'travel_class': pnr_data.get('travel_class', ''),  # Now storing travel class
                 }
             )
+            
+            # Clear existing passenger details and save new ones
+            pnr_status.passengers.all().delete()
+            passengers_data = pnr_data.get('passengers', [])
+            for passenger_info in passengers_data:
+                PassengerDetails.objects.create(
+                    pnr_status=pnr_status,
+                    passenger_serial_number=passenger_info.get('passenger_serial_number', 0),
+                    booking_status=passenger_info.get('booking_status', ''),
+                    booking_coach_id=passenger_info.get('booking_coach_id', ''),
+                    booking_berth_no=passenger_info.get('booking_berth_no', 0),
+                    booking_berth_code=passenger_info.get('booking_berth_code', ''),
+                    current_status=passenger_info.get('current_status', ''),
+                    current_coach_id=passenger_info.get('current_coach_id', ''),
+                    current_berth_no=passenger_info.get('current_berth_no', 0),
+                    current_berth_code=passenger_info.get('current_berth_code', ''),
+                )
             
             return pnr_data
         
